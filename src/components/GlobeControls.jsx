@@ -1,0 +1,3 @@
+import { Search, SlidersHorizontal } from "lucide-react";
+function GlobeControls({search,setSearch,filter,setFilter}){return <div className="globe-controls"><div className="globe-search"><Search size={17}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search countries..."/></div><div className="filter-segment">{[["all","All"],["visited","Visited"],["wishlist","Wishlist"]].map(([key,label])=><button key={key} className={filter===key?"active":""} onClick={()=>setFilter(key)}>{label}</button>)}</div><span className="control-label"><SlidersHorizontal size={14}/> Filter the globe</span></div>}
+export default GlobeControls;
