@@ -135,7 +135,7 @@ function App() {
         <section className="hero">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6 }}>
             <p className="eyebrow hero-eyebrow">YOUR PERSONAL WORLD MAP</p>
-            <h1>Every place has a <em>story.</em></h1>
+            <h1>Every place has a <motion.button className="story-link" onClick={() => document.getElementById("explore")?.scrollIntoView({ behavior: "smooth", block: "center" })} whileHover={{ y: -6, scale: 1.03 }} whileTap={{ scale: 0.96 }} animate={{ y: [0, -7, 0] }} transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}>story.</motion.button></h1>
             <p className="hero-copy">Explore the world, save where you want to go, and turn the places you've visited into memories.</p>
           </motion.div>
 
