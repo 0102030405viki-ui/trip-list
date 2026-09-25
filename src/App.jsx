@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Compass, Heart, Map, Plus, Sparkles } from "lucide-react";
+import { Compass, Heart, Map as MapIcon, Plus, Sparkles } from "lucide-react";
 import GlobeView from "./components/Globe";
 import GlobeControls from "./components/GlobeControls";
 import CountryPanel from "./components/CountryPanel";
@@ -151,7 +151,7 @@ function App() {
         <section className="journey-section" id="journey">
           <div className="section-heading"><div><p className="eyebrow">YOUR PROGRESS</p><h2>Your journey so far</h2></div><div className="journey-note"><Sparkles size={15}/> Keep exploring</div></div>
           <div className="journey-stats">
-            <Stat icon={<Map size={18}/>} number={destinations.length} label="Countries saved" />
+            <Stat icon={<MapIcon size={18}/>} number={destinations.length} label="Countries saved" />
             <Stat icon={<Heart size={18}/>} number={wishlistCount} label="On your wishlist" />
             <Stat icon={<Compass size={18}/>} number={visitedCount} label="Countries visited" />
           </div>
