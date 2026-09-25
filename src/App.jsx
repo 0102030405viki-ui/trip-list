@@ -1,297 +1,190 @@
-import { useEffect, useState } from "react";
-import Header from "./components/Header";
-import SearchBar from "./components/SearchBar";
-import DestinationGrid from "./components/DestinationGrid";
-import Filters from "./components/Filters";
+import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { Compass, Heart, Map, Plus, Sparkles } from "lucide-react";
+import GlobeView from "./components/Globe";
+import GlobeControls from "./components/GlobeControls";
+import CountryPanel from "./components/CountryPanel";
 import "./App.css";
 
 const COUNTRY_API = "https://countries.dev/countries";
 
 function App() {
   const [destinations, setDestinations] = useState(() => {
-    const savedDestinations = localStorage.getItem("tripList");
-
-    return savedDestinations ? JSON.parse(savedDestinations) : [];
+    try { return JSON.parse(localStorage.getItem("tripList") || "[]"); } catch { return []; }
   });
-
   const [countries, setCountries] = useState([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
-
+  const [selectedCountry, setSelectedCountry] = useState(null);
   const [loadingCountries, setLoadingCountries] = useState(true);
-
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Get all countries when the app starts
   useEffect(() => {
     async function getCountries() {
       try {
         const response = await fetch(COUNTRY_API);
-
-        if (!response.ok) {
-          throw new Error("Could not load countries");
-        }
-
+        if (!response.ok) throw new Error();
         const data = await response.json();
-
         setCountries(data.data || data.countries || data);
-      } catch (error) {
-        console.error(error);
-
-        setError("We couldn't load the country database.");
-      } finally {
-        setLoadingCountries(false);
-      }
+      } catch { setError("We couldn't load the country database."); }
+      finally { setLoadingCountries(false); }
     }
-
     getCountries();
   }, []);
 
-  // Save destinations
-  useEffect(() => {
-    localStorage.setItem("tripList", JSON.stringify(destinations));
-  }, [destinations]);
+  useEffect(() => { localStorage.setItem("tripList", JSON.stringify(destinations)); }, [destinations]);
 
-  async function addDestination(countryName) {
-    setLoading(true);
-    setError("");
+  const destinationMap = useMemo(() => new Map(destinations.map(item => [item.name.toLowerCase(), item])), [destinations]);
 
-    try {
-      // Find the country from our country list
-      const matchingCountry = countries.find((country) => {
-        const name = country.name?.common || country.name || "";
+  const visibleCountries = useMemo(() => countries.filter(country => {
+    const name = (country.name?.common || country.name || "").toLowerCase();
+    const saved = destinationMap.get(name);
+    const matchesSearch = !search.trim() || name.includes(search.toLowerCase());
+    const matchesFilter = filter === "all" || (filter === "visited" && saved?.visited) || (filter === "wishlist" && saved?.wishlist);
+    return matchesSearch && matchesFilter;
+  }), [countries, destinationMap, search, filter]);
 
-        return name.toLowerCase() === countryName.toLowerCase();
-      });
+  function findDestination(country) {
+    return destinationMap.get((country.name?.common || country.name || "").toLowerCase());
+  }
 
-      if (!matchingCountry) {
-        throw new Error("Country not found");
-      }
+  function buildDestination(country, existing = {}) {
+    const name = country.name?.common || country.name || "Unknown";
+    return {
+      id: existing.id || crypto.randomUUID(),
+      name,
+      officialName: country.name?.official || name,
+      capital: country.capital?.[0] || existing.capital || "No capital",
+      region: country.region || existing.region || "Unknown",
+      subregion: country.subregion || existing.subregion || "Unknown",
+      population: country.population || existing.population || 0,
+      flag: country.flags?.svg || country.flags?.png || existing.flag || "",
+      image: existing.image || "",
+      photoAuthor: existing.photoAuthor || "",
+      photoAuthorUrl: existing.photoAuthorUrl || "",
+      visited: existing.visited || false,
+      wishlist: existing.wishlist ?? true,
+      notes: existing.notes || "",
+      photos: existing.photos || [],
+    };
+  }
 
-      const country = matchingCountry;
+  async function ensureDestination(country, options = {}) {
+    const existing = findDestination(country);
+    if (existing) return existing;
 
-      const countryDisplayName = country.name?.common || country.name;
+    const destination = buildDestination(country, {
+      visited: options.visited || false,
+      wishlist: options.wishlist ?? true,
+    });
 
-      // Check duplicates
-      const alreadyExists = destinations.some(
-        (destination) =>
-          destination.name.toLowerCase() === countryDisplayName.toLowerCase(),
-      );
+    setDestinations(prev => [...prev, destination]);
+    return destination;
+  }
 
-      if (alreadyExists) {
-        setError("This destination is already on your list.");
-        return;
-      }
-
-      // Get Unsplash photo
-      let image = "";
-      let photoAuthor = "";
-      let photoAuthorUrl = "";
-
-      const accessKey = import.meta.env.VITE_UNSPLASH_ACCESS_KEY;
-
-      if (accessKey) {
-        const photoResponse = await fetch(
-          `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
-            `${countryDisplayName} travel`,
-          )}&per_page=10&orientation=landscape`,
-          {
-            headers: {
-              Authorization: `Client-ID ${accessKey}`,
-            },
-          },
-        );
-
-        if (photoResponse.ok) {
-          const photoData = await photoResponse.json();
-
-          const photo = photoData.results?.[0];
-
-          if (photo) {
-            image = photo.urls.regular;
-
-            photoAuthor = photo.user.name;
-
-            photoAuthorUrl = photo.user.links.html;
-          }
-        }
-      }
-
-      const newDestination = {
-        id: crypto.randomUUID(),
-
-        name: countryDisplayName,
-
-        officialName: country.name?.official || countryDisplayName,
-
-        capital: country.capital || "No capital",
-
-        region: country.region || "Unknown",
-
-        subregion: country.subregion || "Unknown",
-
-        population: country.population || 0,
-
-        flag: country.flags?.svg || country.flags?.png || "",
-
-        image,
-
-        photoAuthor,
-
-        photoAuthorUrl,
-
-        visited: false,
-        wishlist: true,
-      };
-
-      setDestinations((prev) => [...prev, newDestination]);
-
-      setSearch("");
-    } catch (error) {
-      console.error(error);
-
-      setError("We couldn't find that country. Try another name.");
-    } finally {
-      setLoading(false);
+  async function handleCountrySelect(point) {
+    const country = countries.find(item => (item.name?.common || item.name) === point.labelName) || point;
+    setSelectedCountry(country);
+    if (!findDestination(country) && point.saved) {
+      await ensureDestination(country, { wishlist: true });
     }
   }
 
-  function toggleWishlist(id) {
-    setDestinations((prev) =>
-      prev.map((destination) =>
-        destination.id === id
-          ? {
-              ...destination,
-              wishlist: !destination.wishlist,
-            }
-          : destination,
-      ),
-    );
+  async function toggleWishlist(id, country) {
+    if (!country && !id) return;
+    const target = country ? findDestination(country) : destinations.find(item => item.id === id);
+    if (!target && country) {
+      const created = await ensureDestination(country, { wishlist: true });
+      setDestinations(prev => prev.map(item => item.id === created.id ? { ...item, wishlist: true } : item));
+      return;
+    }
+    if (!target) return;
+    setDestinations(prev => prev.map(item => item.id === target.id ? { ...item, wishlist: !item.wishlist } : item));
   }
 
-  function toggleVisited(id) {
-    setDestinations((prev) =>
-      prev.map((destination) =>
-        destination.id === id
-          ? {
-              ...destination,
-              visited: !destination.visited,
-            }
-          : destination,
-      ),
-    );
+  async function toggleVisited(id, country) {
+    const target = country ? findDestination(country) : destinations.find(item => item.id === id);
+    if (!target && country) {
+      await ensureDestination(country, { visited: true, wishlist: false });
+      return;
+    }
+    if (!target) return;
+    setDestinations(prev => prev.map(item => item.id === target.id ? { ...item, visited: !item.visited, wishlist: item.visited ? true : false } : item));
   }
 
-  function deleteDestination(id) {
-    setDestinations((prev) =>
-      prev.filter((destination) => destination.id !== id),
-    );
+  function saveNotes(id, notes) {
+    setDestinations(prev => prev.map(item => item.id === id ? { ...item, notes } : item));
   }
 
-  const filteredDestinations = destinations.filter((destination) => {
-    const matchesSearch = destination.name
-      .toLowerCase()
-      .includes(search.toLowerCase());
+  function addPhotos(id, photos) {
+    setDestinations(prev => prev.map(item => item.id === id ? { ...item, photos: [...(item.photos || []), ...photos] } : item));
+  }
 
-    const matchesFilter =
-      filter === "all" ||
-      (filter === "visited" && destination.visited) ||
-      (filter === "wishlist" && !destination.visited);
-
-    return matchesSearch && matchesFilter;
-  });
-
-  const visitedCount = destinations.filter(
-    (destination) => destination.visited,
-  ).length;
-
-  const wishlistCount = destinations.filter(
-    (destination) => destination.wishlist,
-  ).length;
+  const visitedCount = destinations.filter(item => item.visited).length;
+  const wishlistCount = destinations.filter(item => item.wishlist && !item.visited).length;
 
   return (
     <div className="app">
-      <Header />
+      <header className="header">
+        <div className="brand"><div className="brand-mark"><Compass size={17} /></div><span>TripList</span></div>
+        <nav><a href="#explore">Explore</a><a href="#journey">My journey</a></nav>
+        <div className="header-meta"><span><span className="status-dot visited-dot" /> {visitedCount} visited</span><span><span className="status-dot wish-dot" /> {wishlistCount} wishlist</span></div>
+      </header>
 
       <main>
         <section className="hero">
-          <div className="hero-badge">
-            <span>✈</span>
-            MY TRAVEL JOURNEY
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6 }}>
+            <p className="eyebrow hero-eyebrow">YOUR PERSONAL WORLD MAP</p>
+            <h1>Every place has a <em>story.</em></h1>
+            <p className="hero-copy">Explore the world, save where you want to go, and turn the places you've visited into memories.</p>
+          </motion.div>
+
+          <GlobeControls search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} />
+
+          <div className="globe-stage" id="explore">
+            {loadingCountries ? <div className="globe-loading"><div className="loading-orbit" /><p>Mapping the world...</p></div> : <GlobeView countries={visibleCountries} destinations={destinations} onCountrySelect={handleCountrySelect} />}
+            <div className="globe-legend"><span><i className="legend-dot visited-dot" /> Visited</span><span><i className="legend-dot wish-dot" /> Wishlist</span><span><i className="legend-dot neutral-dot" /> Explore</span></div>
           </div>
-
-          <h1>
-            Where will you go
-            <em> next?</em>
-          </h1>
-
-          <p className="hero-description">
-            Create your personal travel bucket list, discover new destinations
-            and keep track of the places you've explored.
-          </p>
-
-          <SearchBar
-            value={search}
-            onChange={setSearch}
-            onAdd={addDestination}
-            loading={loading || loadingCountries}
-          />
-
           {error && <p className="error-message">{error}</p>}
         </section>
 
-        <section className="stats">
-          <div className="stat">
-            <span className="stat-number">{destinations.length}</span>
-
-            <span className="stat-label">Total destinations</span>
+        <section className="journey-section" id="journey">
+          <div className="section-heading"><div><p className="eyebrow">YOUR PROGRESS</p><h2>Your journey so far</h2></div><div className="journey-note"><Sparkles size={15}/> Keep exploring</div></div>
+          <div className="journey-stats">
+            <Stat icon={<Map size={18}/>} number={destinations.length} label="Countries saved" />
+            <Stat icon={<Heart size={18}/>} number={wishlistCount} label="On your wishlist" />
+            <Stat icon={<Compass size={18}/>} number={visitedCount} label="Countries visited" />
           </div>
-
-          <div className="stat">
-            <span className="stat-number">{wishlistCount}</span>
-
-            <span className="stat-label">On wishlist</span>
+          <div className="saved-preview">
+            {destinations.length === 0 ? <div className="empty-journey"><Plus size={20}/><p>Click any country on the globe to start your list.</p></div> : destinations.map(destination => (
+              <motion.button key={destination.id} className="saved-country" layout whileHover={{ y: -3 }} onClick={() => { const c=countries.find(item => (item.name?.common || item.name) === destination.name); if(c) setSelectedCountry(c); }}>
+                {destination.flag ? <img src={destination.flag} alt="" /> : <span className="flag-fallback">•</span>}
+                <span><strong>{destination.name}</strong><small>{destination.visited ? "Visited" : "Wishlist"}</small></span>
+              </motion.button>
+            ))}
           </div>
-
-          <div className="stat">
-            <span className="stat-number">{visitedCount}</span>
-
-            <span className="stat-label">Places visited</span>
-          </div>
-        </section>
-
-        <section className="bucket-section" id="bucket">
-          <div className="section-header">
-            <div>
-              <p className="section-eyebrow">YOUR COLLECTION</p>
-
-              <h2>My bucket list</h2>
-
-              <p className="destination-count">
-                {destinations.length === 1
-                  ? "1 destination"
-                  : `${destinations.length} destinations`}
-              </p>
-            </div>
-
-            <Filters filter={filter} setFilter={setFilter} />
-          </div>
-
-          <DestinationGrid
-            destinations={filteredDestinations}
-            onToggleVisited={toggleVisited}
-            onToggleWishlist={toggleWishlist}
-            onDelete={deleteDestination}
-          />
         </section>
       </main>
 
-      <footer>
-        <p>Wanderlist · Built with React</p>
-      </footer>
+      <footer><span>TripList</span><span>Explore. Remember. Go again.</span></footer>
+
+      <AnimatePresence>
+        {selectedCountry && <CountryPanel
+          country={selectedCountry}
+          destination={findDestination(selectedCountry)}
+          onClose={() => setSelectedCountry(null)}
+          onToggleWishlist={toggleWishlist}
+          onToggleVisited={toggleVisited}
+          onSaveNotes={saveNotes}
+          onAddPhotos={addPhotos}
+        />}
+      </AnimatePresence>
     </div>
   );
+}
+
+function Stat({ icon, number, label }) {
+  return <div className="journey-stat"><div className="stat-icon">{icon}</div><strong>{number}</strong><span>{label}</span></div>;
 }
 
 export default App;
