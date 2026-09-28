@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 const GlobeView = forwardRef(function GlobeView({ countries, destinations, onCountrySelect }, ref) {
   const globeRef = useRef();
   const destinationMap = useMemo(() => new Map(destinations.map((item) => [item.name.toLowerCase(), item])), [destinations]);
-  const points = useMemo(() => countries.filter((country) => Array.isArray(country.latlng) && country.latlng.length === 2).map((country) => {
+  const points = useMemo(() => countries.filter((country) => { const name = country.name?.common || country.name || ""; return Array.isArray(country.latlng) && country.latlng.length === 2 && destinationMap.has(name.toLowerCase()); }).map((country) => {
     const name = country.name?.common || country.name || "Unknown";
     const saved = destinationMap.get(name.toLowerCase());
     return { ...country, labelName: name, saved, lat: country.latlng[0], lng: country.latlng[1], radius: saved?.visited ? 0.9 : 0.72, color: saved?.visited ? "#d8ff5f" : "#ffffff", altitude: saved?.visited ? 0.045 : 0.028 };
