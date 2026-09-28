@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Compass, Heart, Map as MapIcon, Plus, Sparkles } from "lucide-react";
 import GlobeView from "./components/Globe";
@@ -18,6 +18,7 @@ function App() {
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [loadingCountries, setLoadingCountries] = useState(true);
   const [error, setError] = useState("");
+  const globeRef = useRef();
 
   useEffect(() => {
     async function getCountries() {
@@ -84,10 +85,14 @@ function App() {
 
   async function handleCountrySelect(point) {
     const country = countries.find(item => (item.name?.common || item.name) === point.labelName) || point;
+    await ensureDestination(country, { wishlist: true });
     setSelectedCountry(country);
-    if (!findDestination(country) && point.saved) {
-      await ensureDestination(country, { wishlist: true });
-    }
+    globeRef.current?.focusCountry(country);
+  }
+
+  async function addCountryFromSearch(country) {
+    await handleCountrySelect(country);
+    setSearch("");
   }
 
   async function toggleWishlist(id, country) {
@@ -120,6 +125,24 @@ function App() {
     setDestinations(prev => prev.map(item => item.id === id ? { ...item, photos: [...(item.photos || []), ...photos] } : item));
   }
 
+  function removePhoto(id, photoId) {
+    setDestinations(prev => prev.map(item => item.id === id ? { ...item, photos: (item.photos || []).filter(photo => photo.id !== photoId) } : item));
+  }
+
+  const searchSuggestions = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return [];
+    return countries.filter(country => {
+      const name = country.name?.common || country.name || "";
+      return name.toLowerCase().includes(query) && !destinationMap.has(name.toLowerCase());
+    }).slice(0, 5);
+  }, [countries, search, destinationMap]);
+
+  function setJourneyFilter(nextFilter) {
+    setFilter(nextFilter);
+    document.getElementById("explore")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
   const visitedCount = destinations.filter(item => item.visited).length;
   const wishlistCount = destinations.filter(item => item.wishlist && !item.visited).length;
 
@@ -139,11 +162,11 @@ function App() {
             <p className="hero-copy">Explore the world, save where you want to go, and turn the places you've visited into memories.</p>
           </motion.div>
 
-          <GlobeControls search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} />
+          <GlobeControls search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} suggestions={searchSuggestions} onSelectCountry={addCountryFromSearch} />
 
           <div className="globe-stage" id="explore">
-            {loadingCountries ? <div className="globe-loading"><div className="loading-orbit" /><p>Mapping the world...</p></div> : <GlobeView countries={visibleCountries} destinations={destinations} onCountrySelect={handleCountrySelect} />}
-            <div className="globe-legend"><span><i className="legend-dot visited-dot" /> Visited</span><span><i className="legend-dot wish-dot" /> Wishlist</span><span><i className="legend-dot neutral-dot" /> Explore</span></div>
+            {loadingCountries ? <div className="globe-loading"><div className="loading-orbit" /><p>Mapping the world...</p></div> : <GlobeView ref={globeRef} countries={visibleCountries} destinations={destinations} onCountrySelect={handleCountrySelect} />}
+            <div className="globe-legend"><button onClick={() => setJourneyFilter("visited")}><i className="legend-dot visited-dot" /> Visited</button><button onClick={() => setJourneyFilter("wishlist")}><i className="legend-dot wish-dot" /> Wishlist</button><button onClick={() => setJourneyFilter("all")}><i className="legend-dot neutral-dot" /> All saved</button></div>
           </div>
           {error && <p className="error-message">{error}</p>}
         </section>
@@ -151,9 +174,9 @@ function App() {
         <section className="journey-section" id="journey">
           <div className="section-heading"><div><p className="eyebrow">YOUR PROGRESS</p><h2>Your journey so far</h2></div><div className="journey-note"><Sparkles size={15}/> Keep exploring</div></div>
           <div className="journey-stats">
-            <Stat icon={<MapIcon size={18}/>} number={destinations.length} label="Countries saved" />
-            <Stat icon={<Heart size={18}/>} number={wishlistCount} label="On your wishlist" />
-            <Stat icon={<Compass size={18}/>} number={visitedCount} label="Countries visited" />
+            <Stat icon={<MapIcon size={18}/>} number={destinations.length} label="Countries saved" onClick={() => setJourneyFilter("all")} />
+            <Stat icon={<Heart size={18}/>} number={wishlistCount} label="On your wishlist" onClick={() => setJourneyFilter("wishlist")} />
+            <Stat icon={<Compass size={18}/>} number={visitedCount} label="Countries visited" onClick={() => setJourneyFilter("visited")} />
           </div>
           <div className="saved-preview">
             {destinations.length === 0 ? <div className="empty-journey"><Plus size={20}/><p>Click any country on the globe to start your list.</p></div> : destinations.map(destination => (
@@ -177,14 +200,15 @@ function App() {
           onToggleVisited={toggleVisited}
           onSaveNotes={saveNotes}
           onAddPhotos={addPhotos}
+          onRemovePhoto={removePhoto}
         />}
       </AnimatePresence>
     </div>
   );
 }
 
-function Stat({ icon, number, label }) {
-  return <div className="journey-stat"><div className="stat-icon">{icon}</div><strong>{number}</strong><span>{label}</span></div>;
+function Stat({ icon, number, label, onClick }) {
+  return <button className="journey-stat" onClick={onClick}><div className="stat-icon">{icon}</div><strong>{number}</strong><span>{label}</span></button>;
 }
 
 export default App;
