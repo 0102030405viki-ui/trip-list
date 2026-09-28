@@ -5,7 +5,7 @@ import AiAssistant from "./AiAssistant";
 import TravelJournal from "./TravelJournal";
 import PhotoAlbum from "./PhotoAlbum";
 
-function CountryPanel({ country, destination, onClose, onToggleWishlist, onToggleVisited, onSaveNotes, onAddPhotos }) {
+function CountryPanel({ country, destination, onClose, onToggleWishlist, onToggleVisited, onSaveNotes, onAddPhotos, onRemovePhoto }) {
   const [tab, setTab] = useState("overview");
   useEffect(() => setTab("overview"), [country]);
   if (!country) return null;
@@ -29,7 +29,7 @@ function CountryPanel({ country, destination, onClose, onToggleWishlist, onToggl
         <AiAssistant country={name} destination={destination} visited={visited} />
       </motion.div>}
       {tab === "journal" && visited && <TravelJournal notes={destination?.notes || ""} onSave={(notes) => onSaveNotes(destination.id, notes)} />}
-      {tab === "album" && visited && <PhotoAlbum photos={destination?.photos || []} onAddPhotos={(files) => onAddPhotos(destination.id, files)} />}
+      {tab === "album" && visited && <PhotoAlbum photos={destination?.photos || []} onAddPhotos={(files) => onAddPhotos(destination.id, files)} onRemovePhoto={(photoId) => onRemovePhoto(destination.id, photoId)} />}
     </div>
   </motion.aside></AnimatePresence>;
 }
