@@ -13,10 +13,38 @@ app.use(express.json({ limit: "2mb" }));
 
 function requireAI(res) {
   if (!ai) {
-    res.status(503).json({ error: "GEMINI_API_KEY is not configured on the server." });
+    res.status(503).json({ error: "GEMINI_API_KEY is not configured. Add it to the root .env file and restart npm run server." });
     return false;
   }
   return true;
+}
+
+async function generateTravelAnswer({ country, prompt, notes = "" }) {
+  const context = notes
+    ? `The user has visited ${country}. Their personal notes are:
+${notes}`
+    : `The user is considering visiting ${country} and has not necessarily been there yet.`;
+
+  return ai.models.generateContent({
+    model,
+    contents: `Country: ${country}
+
+${context}
+
+User request: ${prompt}`,
+    config: {
+      systemInstruction: `You are the travel intelligence assistant inside TripList.
+Give practical, specific, easy-to-scan answers for someone planning or remembering a trip.
+Prefer useful details such as areas to visit, realistic day structure, local food, transport considerations, cultural tips, and what to prioritise.
+Use short headings and bullets when they improve readability.
+Do not invent personal facts, exact prices, opening hours, visa rules, safety alerts, or other time-sensitive details.
+For current or changeable travel information, use Google Search when useful and clearly tell the user when they should verify official information.
+If the user asks for an itinerary, make it geographically sensible and avoid cramming too many places into one day.
+If the user has personal notes, use them as context but never add facts to their memories that were not provided.`,
+      thinkingConfig: { thinkingLevel: "medium" },
+      tools: [{ googleSearch: {} }],
+    },
+  });
 }
 
 app.post("/api/ai", async (req, res) => {
@@ -25,24 +53,11 @@ app.post("/api/ai", async (req, res) => {
   if (!country || !prompt) return res.status(400).json({ error: "Country and prompt are required." });
 
   try {
-    const context = notes
-      ? `The user has visited ${country}. Their personal notes are:\n${notes}`
-      : `The user is considering visiting ${country} and has not necessarily been there yet.`;
-
-    const result = await ai.models.generateContent({
-      model,
-      contents: `You are a practical travel assistant inside a personal travel app. Give concise, useful, realistic advice. Do not invent exact current prices, opening hours, visa rules, or other time-sensitive facts. If something may change, tell the user to verify it.
-
-Country: ${country}
-${context}
-
-User request: ${prompt}`,
-    });
-
+    const result = await generateTravelAnswer({ country, prompt, notes });
     res.json({ text: result.text || "No answer was generated." });
   } catch (error) {
     console.error("Gemini error:", error);
-    res.status(500).json({ error: "Gemini request failed." });
+    res.status(500).json({ error: `Gemini request failed: ${error.message || "unknown server error"}` });
   }
 });
 
@@ -54,15 +69,16 @@ app.post("/api/ai/summarize", async (req, res) => {
   try {
     const result = await ai.models.generateContent({
       model,
-      contents: `Summarise the following personal travel notes into a warm, natural short trip summary. Keep the user's facts and tone. Do not add details that are not present.
-
-Notes:
-${notes}`,
+      contents: notes,
+      config: {
+        systemInstruction: "Summarise these personal travel notes into a warm, natural short trip memory. Keep only the user's facts. Do not invent places, people, events, feelings, or details.",
+        thinkingConfig: { thinkingLevel: "low" },
+      },
     });
     res.json({ text: result.text || "No summary was generated." });
   } catch (error) {
     console.error("Gemini summary error:", error);
-    res.status(500).json({ error: "Gemini request failed." });
+    res.status(500).json({ error: `Gemini request failed: ${error.message || "unknown server error"}` });
   }
 });
 
@@ -71,5 +87,5 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`TripList AI server running on http://localhost:${port}`);
+  console.log(`TripList AI server running on http://localhost:${port} using ${model}`);
 });
