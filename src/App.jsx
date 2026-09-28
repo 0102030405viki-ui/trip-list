@@ -149,7 +149,7 @@ function App() {
   return (
     <div className="app">
       <header className="header">
-        <div className="brand"><div className="brand-mark"><Compass size={17} /></div><span>TripList</span></div>
+        <div className="brand"><div className="brand-mark"><Compass size={17} /></div><span>WanderList</span></div>
         <nav><a href="#explore">Explore</a><a href="#journey">My journey</a></nav>
         <div className="header-meta"><span><span className="status-dot visited-dot" /> {visitedCount} visited</span><span><span className="status-dot wish-dot" /> {wishlistCount} wishlist</span></div>
       </header>
