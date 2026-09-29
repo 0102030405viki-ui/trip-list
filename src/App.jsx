@@ -196,17 +196,22 @@ function App() {
 
       <main>
         <section className="hero">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6 }}>
-            <p className="eyebrow hero-eyebrow">YOUR PERSONAL WORLD MAP</p>
-            <h1>Every place has a <motion.button className="story-link" onClick={() => document.getElementById("explore")?.scrollIntoView({ behavior: "smooth", block: "center" })} whileHover={{ y: -6, scale: 1.03 }} whileTap={{ scale: 0.96 }} animate={{ y: [0, -7, 0] }} transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}>story.</motion.button></h1>
-            <p className="hero-copy">Explore the world, save where you want to go, and turn the places you've visited into memories.</p>
-          </motion.div>
+          <div className="hero-layout">
+            <motion.div className="hero-content" initial={{ opacity: 0, x: -18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .65 }}>
+              <p className="eyebrow hero-eyebrow">YOUR PERSONAL WORLD MAP</p>
+              <h1>Every place has a <motion.button className="story-link" onClick={() => document.getElementById("explore")?.scrollIntoView({ behavior: "smooth", block: "center" })} whileHover={{ y: -6, scale: 1.03 }} whileTap={{ scale: 0.96 }} animate={{ y: [0, -7, 0] }} transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}>story.</motion.button></h1>
+              <p className="hero-copy">Explore the world, save where you want to go, and turn the places you've visited into memories.</p>
+              <GlobeControls search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} suggestions={searchSuggestions} onSelectCountry={addCountryFromSearch} />
+              <motion.button className="surprise-button hero-surprise" onClick={surpriseMe} disabled={!destinations.length} whileHover={{ y: -3, scale: 1.02 }} whileTap={{ scale: .97 }} animate={{ boxShadow: ["0 0 0 rgba(185,167,255,0)", "0 0 24px rgba(185,167,255,.2)", "0 0 0 rgba(185,167,255,0)"] }} transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}>
+                <Sparkles size={16}/> Surprise me <span>Pick my next destination</span>
+              </motion.button>
+            </motion.div>
 
-          <GlobeControls search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} suggestions={searchSuggestions} onSelectCountry={addCountryFromSearch} />
-
-          <div className="globe-stage" id="explore">
-            {loadingCountries ? <div className="globe-loading"><div className="loading-orbit" /><p>Mapping the world...</p></div> : <GlobeView ref={globeRef} countries={visibleCountries} destinations={destinations} onCountrySelect={handleCountrySelect} />}
-            <div className="globe-legend"><button onClick={() => setJourneyFilter("visited")}><i className="legend-dot visited-dot" /> Visited</button><button onClick={() => setJourneyFilter("wishlist")}><i className="legend-dot wish-dot" /> Wishlist</button><button onClick={() => setJourneyFilter("all")}><i className="legend-dot neutral-dot" /> All saved</button></div>
+            <div className="hero-globe">
+                    {loadingCountries ? <div className="globe-loading"><div className="loading-orbit" /><p>Mapping the world...</p></div> : <GlobeView ref={globeRef} countries={visibleCountries} destinations={destinations} onCountrySelect={handleCountrySelect} />}
+                <div className="globe-legend"><button onClick={() => setJourneyFilter("visited")}><i className="legend-dot visited-dot" /> Visited</button><button onClick={() => setJourneyFilter("wishlist")}><i className="legend-dot wish-dot" /> Wishlist</button><button onClick={() => setJourneyFilter("all")}><i className="legend-dot neutral-dot" /> All saved</button></div>
+              </div>
+            </div>
           </div>
           {error && <p className="error-message">{error}</p>}
         </section>
@@ -217,7 +222,7 @@ function App() {
               <p className="eyebrow">YOUR PROGRESS</p>
               <h2>Your journey so far</h2>
             </div>
-            <button className="surprise-button" onClick={surpriseMe} disabled={!destinations.length}><Sparkles size={15}/> Surprise me</button>
+            <div className="journey-note"><Sparkles size={15}/> Your saved world</div>
           </div>
           <div className="journey-stats">
             <Stat icon={<MapIcon size={18}/>} number={destinations.length} label="Countries saved" onClick={() => setJourneyFilter("all")} />
