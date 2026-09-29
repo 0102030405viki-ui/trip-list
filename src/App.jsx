@@ -15,6 +15,8 @@ function App() {
   const [countries, setCountries] = useState([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const [journeyView, setJourneyView] = useState("all");
+  const [journeySort, setJourneySort] = useState("recent");
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [loadingCountries, setLoadingCountries] = useState(true);
   const [error, setError] = useState("");
@@ -143,6 +145,44 @@ function App() {
     document.getElementById("explore")?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
+  function openSavedCountry(destination) {
+    const country = countries.find(item => (item.name?.common || item.name) === destination.name);
+    if (!country) return;
+    setSelectedCountry(country);
+    document.getElementById("journey")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    requestAnimationFrame(() => globeRef.current?.focusCountry(country));
+  }
+
+  function surpriseMe() {
+    const wishlist = destinations.filter(item => item.wishlist && !item.visited);
+    const pool = wishlist.length ? wishlist : destinations;
+    if (!pool.length) {
+      document.getElementById("explore")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    const destination = pool[Math.floor(Math.random() * pool.length)];
+    const country = countries.find(item => (item.name?.common || item.name) === destination.name);
+    if (!country) return;
+
+    setSelectedCountry(country);
+    requestAnimationFrame(() => globeRef.current?.focusCountry(country));
+  }
+
+  const journeyDestinations = useMemo(() => {
+    const filtered = destinations.filter(item => {
+      if (journeyView === "visited") return item.visited;
+      if (journeyView === "wishlist") return item.wishlist && !item.visited;
+      return true;
+    });
+
+    return [...filtered].sort((a, b) => {
+      if (journeySort === "az") return a.name.localeCompare(b.name);
+      if (journeySort === "visited") return Number(b.visited) - Number(a.visited);
+      return destinations.indexOf(b) - destinations.indexOf(a);
+    });
+  }, [destinations, journeyView, journeySort]);
+
   const visitedCount = destinations.filter(item => item.visited).length;
   const wishlistCount = destinations.filter(item => item.wishlist && !item.visited).length;
 
@@ -172,24 +212,43 @@ function App() {
         </section>
 
         <section className="journey-section" id="journey">
-          <div className="section-heading"><div><p className="eyebrow">YOUR PROGRESS</p><h2>Your journey so far</h2></div><div className="journey-note"><Sparkles size={15}/> Keep exploring</div></div>
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">YOUR PROGRESS</p>
+              <h2>Your journey so far</h2>
+            </div>
+            <button className="surprise-button" onClick={surpriseMe} disabled={!destinations.length}><Sparkles size={15}/> Surprise me</button>
+          </div>
           <div className="journey-stats">
             <Stat icon={<MapIcon size={18}/>} number={destinations.length} label="Countries saved" onClick={() => setJourneyFilter("all")} />
             <Stat icon={<Heart size={18}/>} number={wishlistCount} label="On your wishlist" onClick={() => setJourneyFilter("wishlist")} />
             <Stat icon={<Compass size={18}/>} number={visitedCount} label="Countries visited" onClick={() => setJourneyFilter("visited")} />
           </div>
+          <div className="journey-toolbar">
+            <div className="journey-filters">
+              {[["all", "All"], ["wishlist", "Wishlist"], ["visited", "Visited"]].map(([key, label]) => (
+                <button key={key} className={journeyView === key ? "active" : ""} onClick={() => setJourneyView(key)}>{label}</button>
+              ))}
+            </div>
+            <select value={journeySort} onChange={event => setJourneySort(event.target.value)} aria-label="Sort destinations">
+              <option value="recent">Recently added</option>
+              <option value="az">A–Z</option>
+              <option value="visited">Visited first</option>
+            </select>
+          </div>
           <div className="saved-preview">
-            {destinations.length === 0 ? <div className="empty-journey"><Plus size={20}/><p>Click any country on the globe to start your list.</p></div> : destinations.map(destination => (
-              <motion.button key={destination.id} className="saved-country" layout whileHover={{ y: -3 }} onClick={() => { const c=countries.find(item => (item.name?.common || item.name) === destination.name); if(c) setSelectedCountry(c); }}>
+            {destinations.length === 0 ? <div className="empty-journey"><Plus size={20}/><p>Click any country on the globe to start your list.</p></div> : journeyDestinations.length === 0 ? <div className="empty-journey"><p>No destinations match this view yet.</p></div> : journeyDestinations.map(destination => (
+              <motion.button key={destination.id} className="saved-country" layout whileHover={{ y: -3 }} whileTap={{ scale: .985 }} onClick={() => openSavedCountry(destination)}>
                 {destination.flag ? <img src={destination.flag} alt="" /> : <span className="flag-fallback">•</span>}
                 <span><strong>{destination.name}</strong><small>{destination.visited ? "Visited" : "Wishlist"}</small></span>
+                <span className="saved-arrow">→</span>
               </motion.button>
             ))}
           </div>
         </section>
       </main>
 
-      <footer><span>TripList</span><span>Explore. Remember. Go again.</span></footer>
+      <footer><span>WanderList</span><span>Explore. Remember. Go again.</span></footer>
 
       <AnimatePresence>
         {selectedCountry && <CountryPanel
