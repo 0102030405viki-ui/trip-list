@@ -67,7 +67,7 @@ footer{padding:25px 5vw;border-top:1px solid rgba(255,255,255,.08);display:flex;
 .header .brand{justify-self:start}
 .header nav{justify-self:center;display:flex;align-items:center;gap:34px}
 .header .header-meta{justify-self:end}
-.globe-legend .wish-dot{background:#8f7cff;box-shadow:0 0 12px rgba(143,124,255,.7)}
+.globe-legend .wish-dot{background:#d8ff5f;box-shadow:0 0 12px rgba(216,255,95,.8)}
 .globe-legend .visited-dot{background:#b9a7ff;box-shadow:0 0 12px rgba(185,167,255,.7)}
 
 
