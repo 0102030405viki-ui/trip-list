@@ -33,7 +33,7 @@ ${context}
 
 User request: ${prompt}`,
     config: {
-      systemInstruction: `You are the travel intelligence assistant inside TripList.
+      systemInstruction: `You are the travel intelligence assistant inside WanderList.
 Give practical, specific, easy-to-scan answers for someone planning or remembering a trip.
 Prefer useful details such as areas to visit, realistic day structure, local food, transport considerations, cultural tips, and what to prioritise.
 Use short headings and bullets when they improve readability.
