@@ -208,7 +208,8 @@ function App() {
             </motion.div>
 
             <div className="hero-globe">
-                    {loadingCountries ? <div className="globe-loading"><div className="loading-orbit" /><p>Mapping the world...</p></div> : <GlobeView ref={globeRef} countries={visibleCountries} destinations={destinations} onCountrySelect={handleCountrySelect} />}
+              <div className="globe-stage" id="explore">
+                {loadingCountries ? <div className="globe-loading"><div className="loading-orbit" /><p>Mapping the world...</p></div> : <GlobeView ref={globeRef} countries={visibleCountries} destinations={destinations} onCountrySelect={handleCountrySelect} />}
                 <div className="globe-legend"><button onClick={() => setJourneyFilter("visited")}><i className="legend-dot visited-dot" /> Visited</button><button onClick={() => setJourneyFilter("wishlist")}><i className="legend-dot wish-dot" /> Wishlist</button><button onClick={() => setJourneyFilter("all")}><i className="legend-dot neutral-dot" /> All saved</button></div>
               </div>
             </div>
