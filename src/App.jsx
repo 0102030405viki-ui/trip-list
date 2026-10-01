@@ -210,6 +210,14 @@ function App() {
   const visitedCount = destinations.filter(item => item.visited).length;
   const wishlistCount = destinations.filter(item => item.wishlist && !item.visited).length;
 
+  const journeyMilestones = [
+    { title: "First stop", detail: "Save your first destination", current: destinations.length, target: 1 },
+    { title: "World curious", detail: "Save 5 destinations", current: destinations.length, target: 5 },
+    { title: "First memory", detail: "Mark your first country visited", current: visitedCount, target: 1 },
+    { title: "Frequent flyer", detail: "Visit 3 countries", current: visitedCount, target: 3 },
+  ];
+  const journeyProgress = destinations.length ? Math.round((visitedCount / destinations.length) * 100) : 0;
+
   return (
     <div className="app">
       <header className="header">
@@ -259,10 +267,40 @@ function App() {
             </div>
             <div className="journey-note"><Sparkles size={15}/> Your saved world</div>
           </div>
-          <div className="journey-stats">
-            <Stat icon={<MapIcon size={18}/>} number={destinations.length} label="Countries saved" onClick={() => setJourneyFilter("all")} />
-            <Stat icon={<Heart size={18}/>} number={wishlistCount} label="On your wishlist" onClick={() => setJourneyFilter("wishlist")} />
-            <Stat icon={<Compass size={18}/>} number={visitedCount} label="Countries visited" onClick={() => setJourneyFilter("visited")} />
+          <div className="journey-dashboard">
+            <div className="journey-stats">
+              <Stat icon={<MapIcon size={18}/>} number={destinations.length} label="Countries saved" onClick={() => setJourneyFilter("all")} />
+              <Stat icon={<Heart size={18}/>} number={wishlistCount} label="On your wishlist" onClick={() => setJourneyFilter("wishlist")} />
+              <Stat icon={<Compass size={18}/>} number={visitedCount} label="Countries visited" onClick={() => setJourneyFilter("visited")} />
+            </div>
+            <div className="journey-progress-card">
+              <div className="progress-copy">
+                <p className="eyebrow">TRAVEL PROGRESS</p>
+                <strong>{journeyProgress}%</strong>
+                <span>of your saved world has been visited</span>
+              </div>
+              <div className="progress-track"><span style={{ width: `${journeyProgress}%` }} /></div>
+              <div className="progress-foot"><span>{visitedCount} visited</span><span>{destinations.length} saved</span></div>
+            </div>
+          </div>
+          <div className="journey-milestones">
+            <div className="milestones-heading">
+              <div><p className="eyebrow">SMALL WINS</p><h3>Travel milestones</h3></div>
+              <span>{journeyMilestones.filter(item => item.current >= item.target).length}/4 unlocked</span>
+            </div>
+            <div className="milestone-grid">
+              {journeyMilestones.map((milestone, index) => {
+                const complete = milestone.current >= milestone.target;
+                const progress = Math.min(milestone.current / milestone.target, 1) * 100;
+                return (
+                  <motion.div key={milestone.title} className={`milestone-card ${complete ? "complete" : ""}`} layout whileHover={{ y: -3 }}>
+                    <div className="milestone-top"><span className="milestone-number">0{index + 1}</span><span className="milestone-state">{complete ? "UNLOCKED" : `${Math.min(milestone.current, milestone.target)}/${milestone.target}`}</span></div>
+                    <strong>{milestone.title}</strong><p>{milestone.detail}</p>
+                    <div className="milestone-track"><span style={{ width: `${progress}%` }} /></div>
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
           <div className="journey-toolbar">
             <div className="journey-filters">
