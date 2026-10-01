@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, FileText, Save, Sparkles } from "lucide-react";
+import { Check, Save, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 
 function TravelJournal({ notes, onSave }) {
@@ -47,16 +47,27 @@ function TravelJournal({ notes, onSave }) {
   return (
     <motion.div className="journal" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
       <div className="journal-heading">
-        <div><p className="eyebrow">YOUR MEMORY</p><h3>Travel journal</h3></div>
-        <FileText size={20} />
+        <div>
+          <p className="eyebrow">YOUR MEMORY</p>
+          <h3>Travel journal</h3>
+          <span>Keep a few thoughts from this trip.</span>
+        </div>
       </div>
-      <textarea value={value} onChange={e => updateValue(e.target.value)} placeholder="Write about what you saw, ate, loved, or would do differently..." />
+      <div className="journal-editor">
+        <textarea value={value} onChange={e => updateValue(e.target.value)} placeholder="Write about what you saw, ate, loved, or would do differently..." />
+        <div className="journal-meta">
+          <span>{value.length} characters</span>
+          {saved && <motion.span className="journal-saved"><Check size={12} /> Saved</motion.span>}
+        </div>
+      </div>
       <div className="journal-actions">
         <button className="secondary-button" onClick={save}><Save size={15} /> {saved ? "Saved" : "Save notes"}</button>
         <button className="ai-button" onClick={summarize} disabled={loading || !value.trim()}><Sparkles size={15} /> {loading ? "Summarising..." : "Summarise with AI"}</button>
       </div>
-      {saved && <motion.p className="saved-feedback" initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }}><Check size={13} /> Saved to this trip</motion.p>}
-      {summary && <motion.div className="summary-card" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}><p className="eyebrow">AI SUMMARY</p><p>{summary}</p></motion.div>}
+      {summary && <motion.div className="summary-card" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="summary-heading"><span><Sparkles size={13} /> AI summary</span></div>
+        <p>{summary}</p>
+      </motion.div>}
     </motion.div>
   );
 }
