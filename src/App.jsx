@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Compass, Heart, Map as MapIcon, Plus, Sparkles } from "lucide-react";
+import { Compass, Heart, Map as MapIcon, MapPin, Plus, Sparkles } from "lucide-react";
 import GlobeView from "./components/Globe";
 import GlobeControls from "./components/GlobeControls";
 import CountryPanel from "./components/CountryPanel";
@@ -276,14 +276,46 @@ function App() {
               <option value="visited">Visited first</option>
             </select>
           </div>
-          <div className="saved-preview">
-            {destinations.length === 0 ? <div className="empty-journey"><Plus size={20}/><p>Click any country on the globe to start your list.</p></div> : journeyDestinations.length === 0 ? <div className="empty-journey"><p>No destinations match this view yet.</p></div> : journeyDestinations.map(destination => (
-              <motion.button key={destination.id} className="saved-country" layout whileHover={{ y: -3 }} whileTap={{ scale: .985 }} onClick={() => openSavedCountry(destination)}>
-                {destination.flag ? <img src={destination.flag} alt="" /> : <span className="flag-fallback">•</span>}
-                <span><strong>{destination.name}</strong><small>{destination.visited ? "Visited" : "Wishlist"}</small></span>
-                <span className="saved-arrow">→</span>
-              </motion.button>
-            ))}
+          <div className="journey-roadmap">
+            {destinations.length === 0 ? (
+              <div className="empty-journey">
+                <Plus size={20}/>
+                <p>Your route starts here. Save a country from the globe to add your first stop.</p>
+              </div>
+            ) : journeyDestinations.length === 0 ? (
+              <div className="empty-journey"><p>No destinations match this view yet.</p></div>
+            ) : (
+              <>
+                <div className="road-line" aria-hidden="true" />
+                <div className="roadmap-stops">
+                  {journeyDestinations.map((destination, index) => (
+                    <motion.button
+                      key={destination.id}
+                      className={`roadmap-stop ${index % 2 === 0 ? "left" : "right"}`}
+                      layout
+                      whileHover={{ y: -5 }}
+                      whileTap={{ scale: .985 }}
+                      onClick={() => openSavedCountry(destination)}
+                    >
+                      <span className="roadmap-marker">
+                        <MapPin size={15} />
+                      </span>
+                      <span className="roadmap-card">
+                        <span className="roadmap-card-top">
+                          {destination.flag ? <img src={destination.flag} alt="" /> : <span className="flag-fallback">•</span>}
+                          <small>{destination.visited ? "VISITED" : "WISHLIST"}</small>
+                        </span>
+                        <strong>{destination.name}</strong>
+                        <span className="roadmap-meta">
+                          {destination.visited ? "A place you've been" : "A place to discover"}
+                          <span>→</span>
+                        </span>
+                      </span>
+                    </motion.button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </section>
       </main>
