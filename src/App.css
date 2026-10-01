@@ -291,3 +291,30 @@ footer{padding:25px 5vw;border-top:1px solid rgba(255,255,255,.08);display:flex;
 
 /* Day 3 discovery, journal, panel and interaction polish */
 .search-clear{width:30px;height:30px;display:grid;place-items:center;flex:none;border:0;border-radius:8px;background:transparent;color:#737a75}.search-clear:hover{background:rgba(255,255,255,.07);color:#fff}.country-suggestions .saved-search-result{align-items:center}.saved-search-result span{min-width:0;align-items:flex-start;gap:3px}.saved-search-result span strong{font-size:12px;font-weight:600}.saved-search-result span small{font-size:9px}.saved-search-result>small{color:#b9a7ff;font-size:9px;font-weight:700}.search-empty{padding:13px 12px;color:#737a75;font-size:10px}.panel-tabs button:disabled{color:#3f4541;cursor:not-allowed}.panel-tabs button:disabled svg{opacity:.45}.panel-content{padding-bottom:45px}.country-actions{position:relative}.country-actions .action-button{min-width:0}@media(max-width:700px){.journal textarea{min-height:220px;height:220px}.journal-actions{grid-template-columns:1fr}.panel-backdrop{display:none}.panel-content{padding-left:18px;padding-right:18px}.hero-surprise{width:100%}}
+
+
+/* My Journey roadmap */
+.journey-roadmap{position:relative;margin-top:18px;padding:28px 0 42px;min-height:250px;overflow:hidden}
+.road-line{position:absolute;top:10px;bottom:10px;left:50%;width:3px;transform:translateX(-50%);border-radius:999px;background:repeating-linear-gradient(to bottom,rgba(185,167,255,.45) 0 18px,transparent 18px 31px)}
+.roadmap-stops{position:relative;display:flex;flex-direction:column;gap:22px}
+.roadmap-stop{position:relative;width:calc(50% - 34px);min-height:108px;padding:0;border:0;background:transparent;color:#fff;text-align:left;cursor:pointer}
+.roadmap-stop.left{align-self:flex-start}.roadmap-stop.right{align-self:flex-end}
+.roadmap-stop:after{content:"";position:absolute;top:50%;width:34px;height:1px;background:rgba(185,167,255,.28)}
+.roadmap-stop.left:after{right:-34px}.roadmap-stop.right:after{left:-34px}
+.roadmap-marker{position:absolute;top:50%;width:32px;height:32px;margin-top:-16px;display:grid;place-items:center;border:1px solid rgba(185,167,255,.45);border-radius:50%;background:#101311;color:#b9a7ff;z-index:2;box-shadow:0 0 0 5px #080a0a,0 0 18px rgba(185,167,255,.15)}
+.roadmap-stop.left .roadmap-marker{right:-50px}.roadmap-stop.right .roadmap-marker{left:-50px}
+.roadmap-card{min-height:108px;padding:15px 17px;display:flex;flex-direction:column;justify-content:center;gap:7px;border:1px solid rgba(255,255,255,.09);border-radius:15px;background:rgba(255,255,255,.035);box-shadow:0 14px 35px rgba(0,0,0,.15);transition:.2s ease}
+.roadmap-stop:hover .roadmap-card{border-color:rgba(185,167,255,.32);background:rgba(185,167,255,.07);transform:translateY(-2px)}
+.roadmap-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.roadmap-card-top img{width:28px;height:19px;object-fit:cover;border-radius:3px}
+.roadmap-card-top small{margin-left:auto;color:#747b76;font-size:8px;font-weight:700;letter-spacing:1px}
+.roadmap-card strong{font-family:"Manrope";font-size:19px;letter-spacing:-.7px}
+.roadmap-meta{display:flex;align-items:center;justify-content:space-between;color:#666d68;font-size:9px}
+.roadmap-meta span{color:#b9a7ff;font-size:14px}
+@media(max-width:700px){
+.journey-roadmap{padding:20px 0 25px 18px}
+.road-line{left:30px;transform:none}
+.roadmap-stop,.roadmap-stop.left,.roadmap-stop.right{width:calc(100% - 24px);align-self:flex-end}
+.roadmap-stop:after,.roadmap-stop.left:after,.roadmap-stop.right:after{left:-24px;right:auto;width:24px}
+.roadmap-stop.left .roadmap-marker,.roadmap-stop.right .roadmap-marker{left:-40px;right:auto}
+}
