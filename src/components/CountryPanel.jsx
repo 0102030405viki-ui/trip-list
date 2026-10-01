@@ -14,7 +14,9 @@ function CountryPanel({ country, destination, onClose, onToggleWishlist, onToggl
   const visited = destination?.visited;
   const wishlist = destination?.wishlist;
 
-  return <AnimatePresence><motion.aside className="country-panel" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", stiffness: 260, damping: 28 }}>
+  return <AnimatePresence>
+    <motion.div className="panel-backdrop" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+    <motion.aside className="country-panel" role="dialog" aria-modal="true" aria-label={`${name} travel details`} initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", stiffness: 260, damping: 28 }}>
     <button className="icon-button panel-close" onClick={onClose} aria-label="Close"><X size={19} /></button>
     <div className="panel-cover">{destination?.image ? <img src={destination.image} alt={name} /> : <div className="panel-cover-placeholder"><MapPinned size={34} /></div>}<div className="panel-cover-overlay" /><div className="panel-title">{flag && <img src={flag} alt="" />}<div><p>{country.region || "Destination"}</p><h2>{name}</h2></div></div></div>
     <div className="panel-content">
