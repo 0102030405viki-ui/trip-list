@@ -37,6 +37,20 @@ function App() {
 
   useEffect(() => { localStorage.setItem("tripList", JSON.stringify(destinations)); }, [destinations]);
 
+  useEffect(() => {
+    function handleEscape(event) {
+      if (event.key === "Escape") setSelectedCountry(null);
+    }
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = selectedCountry ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [selectedCountry]);
+
   const destinationMap = useMemo(() => new Map(destinations.map(item => [item.name.toLowerCase(), item])), [destinations]);
 
   const visibleCountries = useMemo(() => countries.filter(country => {
@@ -140,13 +154,23 @@ function App() {
     }).slice(0, 5);
   }, [countries, search, destinationMap]);
 
+  const savedSearchMatches = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return [];
+    return countries.filter(country => {
+      const name = country.name?.common || country.name || "";
+      return name.toLowerCase().includes(query) && destinationMap.has(name.toLowerCase());
+    }).slice(0, 3);
+  }, [countries, search, destinationMap]);
+
   function setJourneyFilter(nextFilter) {
     setFilter(nextFilter);
     document.getElementById("explore")?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   function openSavedCountry(destination) {
-    const country = countries.find(item => (item.name?.common || item.name) === destination.name);
+    const destinationName = destination?.name?.common || destination?.name;
+    const country = countries.find(item => (item.name?.common || item.name) === destinationName);
     if (!country) return;
     setSelectedCountry(country);
     document.getElementById("journey")?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -201,9 +225,19 @@ function App() {
               <p className="eyebrow hero-eyebrow">YOUR PERSONAL WORLD MAP</p>
               <h1>Every place has a <motion.button className="story-link" onClick={() => document.getElementById("explore")?.scrollIntoView({ behavior: "smooth", block: "center" })} whileHover={{ y: -6, scale: 1.03 }} whileTap={{ scale: 0.96 }} animate={{ y: [0, -7, 0] }} transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}>story.</motion.button></h1>
               <p className="hero-copy">Explore the world, save where you want to go, and turn the places you've visited into memories.</p>
-              <GlobeControls search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} suggestions={searchSuggestions} onSelectCountry={addCountryFromSearch} />
-              <motion.button className="surprise-button hero-surprise" onClick={surpriseMe} disabled={!destinations.length} whileHover={{ y: -3, scale: 1.02 }} whileTap={{ scale: .97 }} animate={{ boxShadow: ["0 0 0 rgba(185,167,255,0)", "0 0 24px rgba(185,167,255,.2)", "0 0 0 rgba(185,167,255,0)"] }} transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}>
-                <Sparkles size={16}/> Surprise me <span>Pick my next destination</span>
+              <GlobeControls
+                search={search}
+                setSearch={setSearch}
+                filter={filter}
+                setFilter={setFilter}
+                suggestions={searchSuggestions}
+                savedMatches={savedSearchMatches}
+                onSelectCountry={addCountryFromSearch}
+                onOpenSaved={openSavedCountry}
+                countriesLoaded={!loadingCountries}
+              />
+              <motion.button className="surprise-button hero-surprise" onClick={surpriseMe} disabled={!destinations.length} whileHover={{ y: -3, scale: 1.02 }} whileTap={{ scale: .97 }} animate={{ boxShadow: ["0 0 0 rgba(185,167,255,0)", "0 0 26px rgba(185,167,255,.24)", "0 0 0 rgba(185,167,255,0)"] }} transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}>
+                Surprise me
               </motion.button>
             </motion.div>
 
