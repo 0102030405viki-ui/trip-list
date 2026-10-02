@@ -177,18 +177,17 @@ function App() {
     requestAnimationFrame(() => globeRef.current?.focusCountry(country));
   }
 
+  const surpriseCountries = useMemo(() => {
+    return countries.filter(country => {
+      const name = (country.name?.common || country.name || "").toLowerCase();
+      return name && !destinationMap.has(name) && Array.isArray(country.latlng) && country.latlng.length === 2;
+    });
+  }, [countries, destinationMap]);
+
   function surpriseMe() {
-    const wishlist = destinations.filter(item => item.wishlist && !item.visited);
-    const pool = wishlist.length ? wishlist : destinations;
-    if (!pool.length) {
-      document.getElementById("explore")?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
-    }
+    if (!surpriseCountries.length) return;
 
-    const destination = pool[Math.floor(Math.random() * pool.length)];
-    const country = countries.find(item => (item.name?.common || item.name) === destination.name);
-    if (!country) return;
-
+    const country = surpriseCountries[Math.floor(Math.random() * surpriseCountries.length)];
     setSelectedCountry(country);
     requestAnimationFrame(() => globeRef.current?.focusCountry(country));
   }
@@ -200,22 +199,25 @@ function App() {
       return true;
     });
 
+    const order = new Map(destinations.map((item, index) => [item.id, index]));
+
     return [...filtered].sort((a, b) => {
       if (journeySort === "az") return a.name.localeCompare(b.name);
       if (journeySort === "visited") return Number(b.visited) - Number(a.visited);
-      return destinations.indexOf(b) - destinations.indexOf(a);
+      return order.get(b.id) - order.get(a.id);
     });
   }, [destinations, journeyView, journeySort]);
 
-  const visitedCount = destinations.filter(item => item.visited).length;
-  const wishlistCount = destinations.filter(item => item.wishlist && !item.visited).length;
+  const visitedCount = useMemo(() => destinations.filter(item => item.visited).length, [destinations]);
+  const wishlistCount = useMemo(() => destinations.filter(item => item.wishlist && !item.visited).length, [destinations]);
 
-  const journeyMilestones = [
+  const journeyMilestones = useMemo(() => [
     { title: "First stop", detail: "Save your first destination", current: destinations.length, target: 1 },
     { title: "World curious", detail: "Save 5 destinations", current: destinations.length, target: 5 },
     { title: "First memory", detail: "Mark your first country visited", current: visitedCount, target: 1 },
     { title: "Frequent flyer", detail: "Visit 3 countries", current: visitedCount, target: 3 },
-  ];
+  ], [destinations.length, visitedCount]);
+
   const journeyProgress = destinations.length ? Math.round((visitedCount / destinations.length) * 100) : 0;
 
   return (
@@ -244,7 +246,7 @@ function App() {
                 onOpenSaved={openSavedCountry}
                 countriesLoaded={!loadingCountries}
               />
-              <motion.button className="surprise-button hero-surprise" onClick={surpriseMe} disabled={!destinations.length} whileHover={{ y: -3, scale: 1.02 }} whileTap={{ scale: .97 }} animate={{ boxShadow: ["0 0 0 rgba(185,167,255,0)", "0 0 26px rgba(185,167,255,.24)", "0 0 0 rgba(185,167,255,0)"] }} transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}>
+              <motion.button className="surprise-button hero-surprise" onClick={surpriseMe} disabled={loadingCountries || !surpriseCountries.length} whileHover={{ y: -3, scale: 1.02 }} whileTap={{ scale: .97 }} animate={{ boxShadow: ["0 0 0 rgba(185,167,255,0)", "0 0 26px rgba(185,167,255,.24)", "0 0 0 rgba(185,167,255,0)"] }} transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}>
                 Surprise me
               </motion.button>
             </motion.div>
@@ -331,7 +333,10 @@ function App() {
                       key={destination.id}
                       className={`roadmap-stop ${index % 2 === 0 ? "left" : "right"}`}
                       layout
-                      whileHover={{ y: -5 }}
+                      initial={{ opacity: 0, y: 24, scale: .98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ duration: .42, delay: Math.min(index * .07, .42), ease: "easeOut", layout: { duration: .35 } }}
+                      whileHover={{ y: -5, scale: 1.01 }}
                       whileTap={{ scale: .985 }}
                       onClick={() => openSavedCountry(destination)}
                     >
